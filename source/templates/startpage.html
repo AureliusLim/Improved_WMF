@@ -10,6 +10,10 @@
 </div>   
 
 <div class="main_container">
+    {% if regular_runtime or fast_runtime %}
+    <p><b>Regular Weighted Median Filter Processing Time:</b> {{ regular_runtime }} seconds</p>
+    <p><b>Fast Weighted Median Filter Processing Time (Still not working):</b> {{ fast_runtime }} seconds</p>
+    {% endif %}
     <div class="submit_container">
         <p><b>Upload Input Image</b></p>
         <form action="{{ url_for('main.process_image') }}" method="POST" enctype="multipart/form-data">
