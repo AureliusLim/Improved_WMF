@@ -1,0 +1,12 @@
+body{
+    padding:0;
+    margin:0;
+}
+#topbox{
+    background-image: url('../backgrounds/background1.jpg');
+    color:white;
+    padding:20px;
+    background-position: center;
+ 
+
+}

@@ -1,5 +1,46 @@
 {% extends "mainlayout.html" %}
 
 {% block content %}
-    <h1>A Visualization of the 100 Times Faster Weighted Median Filter</h1>
+
+    <h3 id="title_intro">Image Denoising Through WMF</h3>
+<div class="main_container">
+    <p>This demonstration features the WMF; an image denoising technique for preserving the edges. This adapts the implementation of Zhang et al. (2014) of accelerating the weighted median filter algorithm which effectively reduces the complexity from O(r<sup>2</sup>) to O(r). In their experiments, the runtime has been reduced from several minutes to less than a second. The key concepts utilized in this algorithm is the Joint Histogram, a Balance Counting Box (BCB), and necklace table.</p>
+    <p><b>Reference:</b></p>
+    <p>Zhang, Q., Xu, L., & Jia, J. (2014). 100+ times faster weighted median filter (WMF). In Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (pp. 2830-2837).</p>
+</div>   
+
+<div class="main_container">
+    <div class="submit_container">
+        <p><b>Upload Input Image</b></p>
+        <form action="{{ url_for('main.process_image') }}" method="POST" enctype="multipart/form-data">
+            <input type="file" name="inputimage" >
+            <input type="submit">
+        </form>
+    </div>
+
+
+
+    <div class="image_container">
+        <div class="image_placeholder">
+            <h2>Original Image:</h2>
+            {% if uploaded_image %}
+                <div class="placeholder_text"><img src="{{ uploaded_image }}" alt="Uploaded image"></div>
+            {% else %}
+                <div class="placeholder_text">Your original image will appear here</div>
+            {% endif %}
+        </div>
+        <div class="image_placeholder">
+            <h2>Processed Image:</h2>
+            {% if processed_image %}
+                <div class="placeholder_text"><img src="{{ processed_image }}" alt="Processed image"></div>
+            {% else %}
+                <div class="placeholder_text">Your processed image will appear here</div>
+            {% endif %}
+        </div>
+    </div>
+    
+</div>
+    
+    
+
 {% endblock %}

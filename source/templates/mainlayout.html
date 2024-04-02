@@ -4,8 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WMF Algorithm Visualization</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/mainlayout.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/startpage.css') }}">
 </head>
 <body>
+    <h2 id="topbox">A Visualization of the 100 Times Faster Weighted Median Filter</h1>
     
     {% block content %}{% endblock %}
     
