@@ -13,9 +13,7 @@ def home():
 def process_image():
     print(request.files)
 
-    # if 'file' not in request.files:
-    #     print("Empty File1")
-    #     return redirect(url_for('main.home'))
+   
     
     file = request.files['inputimage']
     if file.filename == '':
