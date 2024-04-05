@@ -34,15 +34,29 @@ def weighted_median_filter_single_channel(channel_array, weights):
     weight_height, weight_width = weights.shape
     d_height, d_width = weight_height // 2, weight_width // 2
     output_array = np.zeros_like(channel_array)
+    weights = weights / weights.sum()
     
     for y in range(d_height, height - d_height):
         for x in range(d_width, width - d_width):
             neighborhood = channel_array[y-d_height:y+d_height+1, x-d_width:x+d_width+1]
-            median_value = np.median(neighborhood)
+            weighted_list = []
+            
+        
+            for i in range(weight_height):
+                for j in range(weight_width):
+                    val = neighborhood[i, j]
+                    weight = weights[i, j]
+                    
+            
+                    replication_factor = int(np.ceil(weight * 100))  
+                    weighted_list.extend([val] * replication_factor)
+            
+            
+            median_value = np.median(weighted_list)
             output_array[y, x] = median_value
-
-    brightening_factor = 1  
-    output_array = np.clip(output_array * brightening_factor, 0, 255).astype(np.uint8)
+    
+    
+    output_array = np.clip(output_array, 0, 255).astype(np.uint8)
     
     return output_array
 
