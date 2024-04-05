@@ -5,6 +5,7 @@ import numpy as np
 import cv2
 import time
 from werkzeug.utils import secure_filename
+import random
 
 main = Blueprint('main', __name__)
 
@@ -48,6 +49,38 @@ def weighted_median_filter_single_channel(channel_array, weights):
 def fast_weighted_median_filter(image, weights):
     pass
 
+
+def necklace_table(image, weights):
+    whole_table = []
+    none_empty = []
+  
+    # append indices of non-empty cells to list
+    ctr = 0
+    while ctr < len(whole_table):
+        if ctr != None:
+            none_empty.append(ctr)
+        ctr += 1
+      
+    # data access, skipping empty cells
+    for x in none_empty:
+        print(whole_table[x])
+
+    # insertion 
+    head = none_empty[0]
+    next = none_empty[1]
+
+    # insert anywhere in between head and next element
+    insert = random.randrange(head+1, next-1)
+    whole_table.insert(insert, 'val')
+
+    # inserted element is now the nearest to head
+    next = insert
+
+    # deletion
+    # farthest non-empty cell gets deleted
+    last = none_empty[-1]
+    del whole_table[last]
+    
 
 @main.route('/')
 def home():
