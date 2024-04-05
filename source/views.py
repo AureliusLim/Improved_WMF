@@ -194,7 +194,7 @@ def process_image():
                 img = Image.open(input_path)
                 fast_runtime = 0
         '''
-
+        fast_runtime = 0
         
         
 
