@@ -112,7 +112,6 @@ def fast_weighted_median_filter(image, weights):
 
 def fast_weighted_median_filter_single_channel(channel_array, weights, mat):
     #	This doesnt acknowledge on what type of weight it wants (unweighted, guassian, Jacard)
-
     '''
     TODO: make the joint histogram, BCB, and Necklace Chain
     joint-histogram can, contrarily, regenerate weights every time the window shifts
@@ -120,36 +119,78 @@ def fast_weighted_median_filter_single_channel(channel_array, weights, mat):
     height, width = channel_array.shape
     weight_height, weight_width = weights.shape
     d_height, d_width = weight_height // 2, weight_width // 2
-    
+    new_width = width - d_width
+    new_height = height - d_height
+
     #and radius is always 15 In author's example
     radius = 15
     output_array = np.zeros_like(channel_array)
     histogram = np.zeros_like((256,256))
     
-    for y in range(d_height, height - d_height):
-        rTopMostRow = min(height-1, radius)
-        for x in range(d_width, width - d_width):
-            rLeftMostCol = max(0, x - radius)
-            rRightMostCol = min(width - 1, x + radius)
+    temp_necklace = [[] for _ in range(256)]
 
-            #Joint histogram for loop (to initialize joint histogram) : I didnt consider the purpose of d_height/d_width here
-            for r_cur_row in range(0, rTopMostRow - 1):
-                for r_cur_col in range (rLeftMostCol, rRightMostCol-1):
-                    if mat[r_cur_row][r_cur_col] == 0:
-                        continue
-                    fval = channel_array[r_cur_row][r_cur_col]
-                    gval = weights[r_cur_row][r_cur_col]
+    for cur_col in range(d_width, new_width):
+        rTopMostRow = min(new_height-1, radius)
+        rLeftMostCol = max(0, cur_col - radius)
+        rRightMostCol = min(width - 1, cur_col + radius)
+        for r_cur_row in range(0, rTopMostRow - 1):
+            for r_cur_col in range (rLeftMostCol, rRightMostCol-1):
+                if mat[r_cur_row][r_cur_col] == 0:
+                    continue
+                fval = channel_array[r_cur_row][r_cur_col]
+                gval = weights[r_cur_row][r_cur_col]
                     
-                    if histogram[fval][gval] == 0 and gval:
-                        necklace_table(channel_array, weights)
-                    histogram[fval][gval] += 1
-                    #updateBCB(BCB[gval],BCBf,BCBb,gval,-1);
-
-            
+                if histogram[fval][gval] == 0 and gval:
+                    temp_necklace[fval].append(gval)
+                    #necklace_table(channel_array, weights)
+                histogram[fval][gval] += 1
+                #updateBCB(BCB[gval],BCBf,BCBb,gval,-1);
+        for cur_row in range(d_height, new_height):
+            '''
+            Do weighted median filtering here with the use of BCB
+            '''
             #bcb finds the median and occurs everytime when the histogram shifts
             neighborhood = channel_array[y-d_height:y+d_height+1, x-d_width:x+d_width+1]
             median_value = np.median(neighborhood)
-            output_array[y, x] = median_value
+            output_array[cur_row, cur_col] = median_value
+
+            #!!!!!update the joint histogram before going to the next row
+
+            #1.)Insert new row pixel value count
+            row_num = cur_row + radius + 1
+            #if row index number is not past the image's border
+            if(row_num < d_height):
+                for r_cur_col in range (rLeftMostCol, rRightMostCol-1):
+                    if mat[row_num][r_cur_col] == 0:
+                        continue
+                    fval = channel_array[row_num][r_cur_col]
+                    gval = weights[row_num][r_cur_col]
+                    
+                    if histogram[fval][gval] == 0 and gval:
+                        temp_necklace[fval].append(gval)
+                        #necklace_table(channel_array, weights)
+                    histogram[fval][gval] += 1
+                    #updateBCB(BCB[gval],BCBf,BCBb,gval,-1);
+
+
+            #2.)Remove bottommost row pixel value count
+            row_num = cur_row - radius
+            #if row index number is not past the image's border
+            if(row_num >= 0):
+                for r_cur_col in range (rLeftMostCol, rRightMostCol-1):
+                    if mat[row_num][r_cur_col] == 0:
+                        continue
+                    fval = channel_array[row_num][r_cur_col]
+                    gval = weights[row_num][r_cur_col]
+                    histogram[fval][gval] -= 1
+                    #remove the histogram from necklacke if no more pixel count
+                    if histogram[fval][gval] == 0 and gval:
+                        if gval in temp_necklace[fval]:
+                            temp_necklace[fval].remove(gval)
+                        #necklace_table(channel_array, weights)
+                   
+                    #updateBCB(BCB[gval],BCBf,BCBb,gval,-1);
+
 
     brightening_factor = 1  
     output_array = np.clip(output_array * brightening_factor, 0, 255).astype(np.uint8)
@@ -182,6 +223,7 @@ def process_image():
         regular_start_time = time.time()
         filtered_img = weighted_median_filter(img, weights)
         end_time = time.time()
+        fast_runtime = 0
         regular_runtime = end_time - regular_start_time
         print(regular_runtime)
         output_filename = f'processed_{filename}'
@@ -192,7 +234,7 @@ def process_image():
         #Improved weighted median filter
         '''
                 img = Image.open(input_path)
-                fast_runtime = 0
+                
         '''
 
         
