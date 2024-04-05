@@ -223,7 +223,7 @@ def process_image():
         regular_start_time = time.time()
         filtered_img = weighted_median_filter(img, weights)
         end_time = time.time()
-        fast_runtime = 0
+        
         regular_runtime = end_time - regular_start_time
         print(regular_runtime)
         output_filename = f'processed_{filename}'
@@ -231,6 +231,7 @@ def process_image():
         filtered_img.save(output_path)
 
 
+        fast_runtime = 0
         #Improved weighted median filter
         '''
                 img = Image.open(input_path)
