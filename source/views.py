@@ -61,141 +61,58 @@ def weighted_median_filter_single_channel(channel_array, weights):
     
     return output_array
 
-def necklace_table(image, weights):
-    whole_table = []
-    not_empty = []
-  
-    # append indices of non-empty cells to list
-    ctr = 0
-    while ctr < len(whole_table):
-        if ctr != None:
-            not_empty.append(ctr)
-        ctr += 1
-      
-    # data access, skipping empty cells
-    for x in not_empty:
-        print(whole_table[x])
+def update_histogram(histogram, intensity, weight, increment):
+    histogram[intensity] += weight * increment
 
-    # insertion 
-    head = not_empty[0]
-    next = not_empty[1]
+def compute_median(histogram, total_weight):
+    cumulative_weight = 0
+    median_index = total_weight // 2
+    for intensity, weight in enumerate(histogram):
+        cumulative_weight += weight
+        if cumulative_weight > median_index:
+            return intensity
+    return 0
 
-    # insert anywhere in between head and next element
-    insert = random.randrange(head+1, next-1)
-    whole_table.insert(insert, 'val')
-
-    # inserted element is now the nearest to head
-    next = insert
-
-    # deletion
-    # farthest non-empty cell gets deleted
-    last = not_empty[-1]
-    del whole_table[last]
-
-def fast_weighted_median_filter(image, weights):
-    mat  = np.zeros_like(img, dtype=np.uint8)
-      
-    if image.mode == 'RGB':
-        
-        r, g, b = image.split()
-
-        r_filtered = fast_weighted_median_filter_single_channel(np.array(r), weights, mat)
-        g_filtered = fast_weighted_median_filter_single_channel(np.array(g), weights, mat)
-        b_filtered = fast_weighted_median_filter_single_channel(np.array(b), weights, mat)
-
-        return Image.merge("RGB", (Image.fromarray(r_filtered), Image.fromarray(g_filtered), Image.fromarray(b_filtered)))
-    else:
-        img_array = np.array(image, dtype=np.uint8)
-        filtered_array = weighted_median_filter_single_channel(img_array, weights)
-        return Image.fromarray(filtered_array, mode='L')
-    
-
-def fast_weighted_median_filter_single_channel(channel_array, weights, mat):
-    #	This doesnt acknowledge on what type of weight it wants (unweighted, guassian, Jacard)
-    '''
-    TODO: make the joint histogram, BCB, and Necklace Chain
-    joint-histogram can, contrarily, regenerate weights every time the window shifts
-    '''
+def fast_weighted_median_filter_single_channel(channel_array, weights):
     height, width = channel_array.shape
-    weight_height, weight_width = weights.shape
-    d_height, d_width = weight_height // 2, weight_width // 2
-    new_width = width - d_width
-    new_height = height - d_height
-
-    #and radius is always 15 In author's example
-    radius = 15
-    output_array = np.zeros_like(channel_array)
-    histogram = np.zeros_like((256,256))
+    output_array = np.zeros_like(channel_array, dtype=np.uint8)
     
-    temp_necklace = [[] for _ in range(256)]
+    max_intensity = 256
+    histogram = np.zeros(max_intensity, dtype=int)
 
-    for cur_col in range(d_width, new_width):
-        rTopMostRow = min(new_height-1, radius)
-        rLeftMostCol = max(0, cur_col - radius)
-        rRightMostCol = min(width - 1, cur_col + radius)
-        for r_cur_row in range(0, rTopMostRow - 1):
-            for r_cur_col in range (rLeftMostCol, rRightMostCol-1):
-                if mat[r_cur_row][r_cur_col] == 0:
-                    continue
-                fval = channel_array[r_cur_row][r_cur_col]
-                gval = weights[r_cur_row][r_cur_col]
-                    
-                if histogram[fval][gval] == 0 and gval:
-                    temp_necklace[fval].append(gval)
-                    #necklace_table(channel_array, weights)
-                histogram[fval][gval] += 1
-                #updateBCB(BCB[gval],BCBf,BCBb,gval,-1);
-        for cur_row in range(d_height, new_height):
-            '''
-            Do weighted median filtering here with the use of BCB
-            '''
-            #bcb finds the median and occurs everytime when the histogram shifts
-            neighborhood = channel_array[y-d_height:y+d_height+1, x-d_width:x+d_width+1]
-            median_value = np.median(neighborhood)
-            output_array[cur_row, cur_col] = median_value
+    d_height, d_width = weights.shape[0] // 2, weights.shape[1] // 2
+    total_weight = np.sum(weights)
 
-            #!!!!!update the joint histogram before going to the next row
-
-            #1.)Insert new row pixel value count
-            row_num = cur_row + radius + 1
-            #if row index number is not past the image's border
-            if(row_num < d_height):
-                for r_cur_col in range (rLeftMostCol, rRightMostCol-1):
-                    if mat[row_num][r_cur_col] == 0:
-                        continue
-                    fval = channel_array[row_num][r_cur_col]
-                    gval = weights[row_num][r_cur_col]
-                    
-                    if histogram[fval][gval] == 0 and gval:
-                        temp_necklace[fval].append(gval)
-                        #necklace_table(channel_array, weights)
-                    histogram[fval][gval] += 1
-                    #updateBCB(BCB[gval],BCBf,BCBb,gval,-1);
-
-
-            #2.)Remove bottommost row pixel value count
-            row_num = cur_row - radius
-            #if row index number is not past the image's border
-            if(row_num >= 0):
-                for r_cur_col in range (rLeftMostCol, rRightMostCol-1):
-                    if mat[row_num][r_cur_col] == 0:
-                        continue
-                    fval = channel_array[row_num][r_cur_col]
-                    gval = weights[row_num][r_cur_col]
-                    histogram[fval][gval] -= 1
-                    #remove the histogram from necklacke if no more pixel count
-                    if histogram[fval][gval] == 0 and gval:
-                        if gval in temp_necklace[fval]:
-                            temp_necklace[fval].remove(gval)
-                        #necklace_table(channel_array, weights)
-                   
-                    #updateBCB(BCB[gval],BCBf,BCBb,gval,-1);
-
-
-    brightening_factor = 1  
-    output_array = np.clip(output_array * brightening_factor, 0, 255).astype(np.uint8)
+   
+    for y in range(height):
+        for x in range(width):
+            histogram[:] = 0  
+            for i in range(-d_height, d_height + 1):
+                for j in range(-d_width, d_width + 1):
+                    new_y = y + i
+                    new_x = x + j
+                    if 0 <= new_y < height and 0 <= new_x < width:
+                        intensity = channel_array[new_y, new_x]
+                        weight = weights[i + d_height, j + d_width]
+                        update_histogram(histogram, intensity, weight, 1)
+            output_array[y, x] = compute_median(histogram, total_weight)
     
     return output_array
+
+def fast_weighted_median_filter(image, weights):
+    if image.mode == 'RGB':
+        r, g, b = image.split()
+        r_filtered = fast_weighted_median_filter_single_channel(np.array(r), weights)
+        g_filtered = fast_weighted_median_filter_single_channel(np.array(g), weights)
+        b_filtered = fast_weighted_median_filter_single_channel(np.array(b), weights)
+        return Image.merge("RGB", [Image.fromarray(r_filtered), Image.fromarray(g_filtered), Image.fromarray(b_filtered)])
+    elif image.mode == 'L':
+        img_array = np.array(image, dtype=np.uint8)
+        filtered_array = fast_weighted_median_filter_single_channel(img_array, weights)
+        return Image.fromarray(filtered_array, 'L')
+    else:
+        raise ValueError("Unsupported image mode")
+
 @main.route('/')
 def home():
     return render_template('startpage.html')
@@ -212,7 +129,7 @@ def process_image():
         return redirect(url_for('main.home'))
     
     if file:
-        #Original weighted median filter
+        
         filename = secure_filename(file.filename)
         input_path = os.path.join(current_app.root_path, 'static/uploads', filename)
         file.save(input_path)
@@ -231,12 +148,20 @@ def process_image():
         filtered_img.save(output_path)
 
 
-        fast_runtime = 0
-        #Improved weighted median filter
-        '''
-                img = Image.open(input_path)
-                
-        '''
+           
+        original_weights = np.array([[1, 2, 1], [2, 4, 2], [1, 2, 1]])
+    
+        scale_factor = 1 / original_weights.min()  
+        scaled_weights = (original_weights * scale_factor).astype(int)
+
+        fast_start_time = time.time()
+        fast_filtered_img = fast_weighted_median_filter(img, scaled_weights)
+        fast_runtime = time.time() - fast_start_time
+        fast_output_filename = f'fast_processed_{filename}'
+        fast_output_path = os.path.join(current_app.root_path, 'static/uploads', fast_output_filename)
+        fast_filtered_img.save(fast_output_path)
+       
+        
 
         
         
